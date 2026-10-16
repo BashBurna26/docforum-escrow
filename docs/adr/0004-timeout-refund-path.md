@@ -184,9 +184,14 @@ locked longer, and the releaser must consent because they control the
 release path. This follows ADR 0001: the contract enforces who may act,
 not why.
 
-On success the contract emits `refundext` with the escrow id as a topic
-and `(old_deadline, new_deadline)` as event data. `get_escrow` returns
+On success the contract emits `refund_deadline_extended` with the escrow
+id as a topic and the old/new deadlines as event data. `get_escrow` returns
 `refund_after`, exposing the latest deadline; the event records every
 successful change. A missing deadline, a deadline already reached, a
 non-later proposal, or a non-`Funded` escrow is rejected without changing
 storage. `InvalidRefundExtension` uses error code 29.
+
+The TypeScript SDK exposes the operation as `extendRefundAfter`, accepts
+both signing keypairs, and pins the additive public API at version 0.4.0.
+The release tarball and downstream dependency update remain a separate
+release step under ADR 0003.

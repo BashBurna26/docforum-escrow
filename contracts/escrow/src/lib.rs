@@ -15,7 +15,7 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, Env, String,
+    contract, contracterror, contractevent, contractimpl, contracttype, token, Address, Env, String,
 };
 
 #[contracttype]
@@ -69,6 +69,15 @@ pub enum Error {
     /// The escrow has no active deadline to extend, its deadline has
     /// already passed, or the proposed deadline is not later.
     InvalidRefundExtension = 29,
+}
+
+#[contractevent]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RefundDeadlineExtended {
+    #[topic]
+    pub escrow_id: u64,
+    pub old_deadline: u64,
+    pub new_deadline: u64,
 }
 
 #[contract]
@@ -152,7 +161,7 @@ impl EscrowContract {
 
     /// Extends an active refund deadline by mutual consent of the payer
     /// and releaser. The current deadline must not have passed, and the
-    /// new deadline must be strictly later. The `refundext` event
+    /// new deadline must be strictly later. The `refund_deadline_extended` event
     /// records the escrow id and both values; `get_escrow` exposes the
     /// latest deadline. If both roles share an address, one authorization
     /// from that address satisfies both roles.
@@ -181,10 +190,12 @@ impl EscrowContract {
         env.storage()
             .persistent()
             .set(&DataKey::Escrow(escrow_id), &data);
-        env.events().publish(
-            (symbol_short!("refundext"), escrow_id),
-            (current_deadline, new_deadline),
-        );
+        RefundDeadlineExtended {
+            escrow_id,
+            old_deadline: current_deadline,
+            new_deadline,
+        }
+        .publish(&env);
         Ok(())
     }
 

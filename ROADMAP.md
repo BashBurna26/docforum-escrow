@@ -126,8 +126,9 @@
 - [x] Allow payer and releaser to extend an active `refund_after`
   deadline by mutual authorization (issue #41). The current deadline
   must still be in the future and the proposed value must be later.
-  `get_escrow` exposes the latest value and `refundext` records each
-  extension. See ADR 0004 for the payee-consent rationale. Closes #41.
+  `get_escrow` exposes the latest value and `refund_deadline_extended` records each
+  extension. The generated client and SDK wrapper are updated; package
+  version is 0.4.0. See ADR 0004 for the payee-consent rationale. Closes #41.
 
 ## Explicitly out of scope for this repo
 - Any healthcare-specific logic (see README).
