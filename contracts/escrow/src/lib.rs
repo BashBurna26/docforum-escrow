@@ -14,7 +14,9 @@
 // consuming application (docforum-core), never here.
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractimpl, contracttype, token, Address, Env, String};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, Env, String,
+};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -64,6 +66,9 @@ pub enum Error {
     /// across `create_escrow`'s transfer (a lying or short-delivering
     /// token) — see docs/threat-model.md T5.
     BalanceMismatch = 6,
+    /// The escrow has no active deadline to extend, its deadline has
+    /// already passed, or the proposed deadline is not later.
+    InvalidRefundExtension = 29,
 }
 
 #[contract]
@@ -143,6 +148,44 @@ impl EscrowContract {
             .persistent()
             .get(&DataKey::Escrow(escrow_id))
             .ok_or(Error::NotFound)
+    }
+
+    /// Extends an active refund deadline by mutual consent of the payer
+    /// and releaser. The current deadline must not have passed, and the
+    /// new deadline must be strictly later. The `refundext` event
+    /// records the escrow id and both values; `get_escrow` exposes the
+    /// latest deadline. If both roles share an address, one authorization
+    /// from that address satisfies both roles.
+    pub fn extend_refund_after(env: Env, escrow_id: u64, new_deadline: u64) -> Result<(), Error> {
+        let mut data: EscrowData = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Escrow(escrow_id))
+            .ok_or(Error::NotFound)?;
+
+        if data.status != EscrowStatus::Funded {
+            return Err(Error::NotFunded);
+        }
+
+        let current_deadline = data.refund_after.ok_or(Error::InvalidRefundExtension)?;
+        if env.ledger().timestamp() >= current_deadline || new_deadline <= current_deadline {
+            return Err(Error::InvalidRefundExtension);
+        }
+
+        data.payer.require_auth();
+        if data.releaser != data.payer {
+            data.releaser.require_auth();
+        }
+
+        data.refund_after = Some(new_deadline);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Escrow(escrow_id), &data);
+        env.events().publish(
+            (symbol_short!("refundext"), escrow_id),
+            (current_deadline, new_deadline),
+        );
+        Ok(())
     }
 
     /// Moves the escrowed `amount` to `payee`. Only the escrow's
