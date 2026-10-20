@@ -5,7 +5,7 @@ use docforum_escrow::{EscrowContract, EscrowContractClient, EscrowStatus};
 use soroban_sdk::{
     testutils::{Address as _, Ledger as _},
     token::StellarAssetClient,
-    Address, Env, String,
+    Address, Env, String, Vec,
 };
 
 const CREATED_AT: u64 = 1_000;
@@ -26,7 +26,7 @@ fn fund_escrow(env: &Env, refund_after: Option<u64>) -> Fixture<'_> {
     let releaser = Address::generate(env);
     asset.mint(&payer, &1_000);
 
-    let contract_id = env.register(EscrowContract, ());
+    let contract_id = env.register(EscrowContract, (Vec::<Address>::new(env),));
     let client = EscrowContractClient::new(env, &contract_id);
     let escrow_id = client.create_escrow(
         &payer,
