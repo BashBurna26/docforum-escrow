@@ -36,6 +36,7 @@ fn fund_escrow(env: &Env, refund_after: Option<u64>) -> Fixture<'_> {
         &String::from_str(env, "issue-41"),
         &releaser,
         &refund_after,
+        &false,
     );
 
     Fixture { client, escrow_id }
