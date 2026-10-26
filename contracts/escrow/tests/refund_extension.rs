@@ -37,6 +37,7 @@ fn fund_escrow(env: &Env, refund_after: Option<u64>) -> Fixture<'_> {
         &releaser,
         &refund_after,
         &false,
+        &None,
     );
 
     Fixture { client, escrow_id }
