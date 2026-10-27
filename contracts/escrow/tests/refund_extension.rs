@@ -38,6 +38,8 @@ fn fund_escrow(env: &Env, refund_after: Option<u64>) -> Fixture<'_> {
         &refund_after,
         &false,
         &None,
+        &None,
+        &None,
     );
 
     Fixture { client, escrow_id }
